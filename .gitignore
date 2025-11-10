@@ -13,6 +13,8 @@
 **/*pychace*/
 .utmp/
 .vscode/
+/Server/uploads/
+/Server/uploads/** */
 
 
 # MemoryCaptures can get excessive in size.
