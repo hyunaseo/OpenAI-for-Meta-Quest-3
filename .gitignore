@@ -8,9 +8,7 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
-/WhatIsThis_BurstDebugInformation_DoNotShip/
-/Sample_BackUpThisFolder_ButDontShipItWithYourGame/
-/UISetExample_BackUpThisFolder_ButDontShipItWithYourGame/
+**/*BackUpThisFolder*/
 .utmp/
 .vscode/
 
@@ -55,6 +53,8 @@ sysinfo.txt
 !/Assets/Scripts/**
 !/Assets/Prefabs/
 !/Assets/Prefabs/**
+!/Assets/PassThroughCameraApiSamples/
+!/Assets/PassThroughCameraApiSamples/**
 
 # Also keep Server directory at repo root
 !/Server/
