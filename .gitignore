@@ -8,6 +8,12 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/WhatIsThis_BurstDebugInformation_DoNotShip/
+/Sample_BackUpThisFolder_ButDontShipItWithYourGame/
+/UISetExample_BackUpThisFolder_ButDontShipItWithYourGame/
+.utmp/
+.vscode/
+
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
@@ -47,6 +53,8 @@ sysinfo.txt
 !/Assets/Scenes/**
 !/Assets/Scripts/
 !/Assets/Scripts/**
+!/Assets/Prefabs/
+!/Assets/Prefabs/**
 
 # Also keep Server directory at repo root
 !/Server/
@@ -81,3 +89,5 @@ sysinfo.txt
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+*.slnx

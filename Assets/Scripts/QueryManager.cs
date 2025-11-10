@@ -3,7 +3,7 @@ using System.Collections;
 using Unity.Burst.Intrinsics;
 using Unity.VisualScripting;
 using Unity.VisualScripting.AssemblyQualifiedNameParser;
-using UnityEditor.Search;
+
 using UnityEngine;
 
 public class QueryManager : MonoBehaviour
@@ -12,13 +12,6 @@ public class QueryManager : MonoBehaviour
     [SerializeField] private SpeechToTextProvider stt;
     [SerializeField] private WebSocketClient ws;
     [SerializeField] private TextToSpeech tts;
-
-    [Header("Behavior")]
-    [Tooltip("Delay (seconds) before re-arming listening after TTS completes.")]
-    [SerializeField] private float reactivateDelay = 1.0f;
-
-    [Tooltip("Extra tail to avoid speaker→mic bleed after TTS (seconds).")]
-    [SerializeField] private float silenceTail = 0.35f;
 
     private bool _subscribed;
     private Coroutine _speakLoop;
