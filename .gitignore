@@ -9,6 +9,8 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 **/*BackUpThisFolder*/
+**/*BurstDebug*/
+**/*pychace*/
 .utmp/
 .vscode/
 
