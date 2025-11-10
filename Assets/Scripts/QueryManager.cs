@@ -8,10 +8,14 @@ using UnityEngine;
 
 public class QueryManager : MonoBehaviour
 {
+    [Header("Modality Configuration")]
+    [SerializeField] private StreamingDataSelector dataSelector;
+
     [Header("References")]
     [SerializeField] private SpeechToTextProvider stt;
     [SerializeField] private WebSocketClient ws;
     [SerializeField] private TextToSpeech tts;
+    [SerializeField] private PassThroughProvider passthroughProvider;
 
     private bool _subscribed;
     private Coroutine _speakLoop;
@@ -32,6 +36,8 @@ public class QueryManager : MonoBehaviour
         if (!stt) stt = FindAnyObjectByType<SpeechToTextProvider>();
         if (!ws) ws = FindAnyObjectByType<WebSocketClient>();
         if (!tts) tts = FindAnyObjectByType<TextToSpeech>();
+        if (!dataSelector) dataSelector = FindAnyObjectByType<StreamingDataSelector>();
+        if (!passthroughProvider) passthroughProvider = FindAnyObjectByType<PassThroughProvider>();
     }
 
     private void Awake()
@@ -39,6 +45,11 @@ public class QueryManager : MonoBehaviour
         if (!stt) Debug.LogError("[QueryManager] SpeechToTextProvider not assigned.");
         if (!ws) Debug.LogError("[QueryManager] WebSocketClient not assigned.");
         if (!tts) Debug.LogError("[QueryManager] TextToSpeech not assigned.");
+        // `dataSelector` and `passthroughProvider` are optional; only required when sending images.
+        if (dataSelector == null)
+            Debug.Log("[QueryManager] StreamingDataSelector not assigned (image sending disabled).");
+        if (passthroughProvider == null)
+            Debug.Log("[QueryManager] PassThroughProvider not assigned (image capture unavailable).");
     }
 
     private void OnEnable()
@@ -124,8 +135,37 @@ public class QueryManager : MonoBehaviour
 
         OnListeningFinal?.Invoke(text);
         OnProcessingStart?.Invoke();
+        // If configured, try to capture an image and include it with the STT payload.
+        string json;
+        bool wantImage = dataSelector != null && dataSelector.SendImage;
+        if (wantImage && passthroughProvider != null)
+        {
+            try
+            {
+                if (passthroughProvider.TryCapturePassThrough(out byte[] jpgBytes, out int iw, out int ih) && jpgBytes != null && jpgBytes.Length > 0)
+                {
+                    string b64 = Convert.ToBase64String(jpgBytes);
+                    json = $"{{\"type\":\"stt_final\",\"text\":{ToJsonString(text)},\"image_b64\":{ToJsonString(b64)},\"image_w\":{iw},\"image_h\":{ih}}}";
+                }
+                else
+                {
+                    Debug.LogWarning("[QueryManager] Image capture failed or returned empty bytes; sending text only.");
+                    json = $"{{\"type\":\"stt_final\",\"text\":{ToJsonString(text)}}}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[QueryManager] Exception capturing image: {ex.Message}; sending text only.");
+                json = $"{{\"type\":\"stt_final\",\"text\":{ToJsonString(text)}}}";
+            }
+        }
+        else
+        {
+            if (wantImage && passthroughProvider == null)
+                Debug.LogWarning("[QueryManager] SendImage requested but PassThroughProvider is not assigned.");
+            json = $"{{\"type\":\"stt_final\",\"text\":{ToJsonString(text)}}}";
+        }
 
-        string json = $"{{\"type\":\"stt_final\",\"text\":{ToJsonString(text)}}}";
         ws?.SendText(json);
         _state = QueryState.WaitingServer;
         Debug.Log($"[QueryManager] → Server: {text}");

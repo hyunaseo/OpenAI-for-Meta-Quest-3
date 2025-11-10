@@ -26,7 +26,14 @@ public class WebSocketClient : MonoBehaviour
     private CancellationTokenSource _cancellationTokenSource;
     private Task _recvTask;
     private Task _sendTask;
-    private readonly ConcurrentQueue<ArraySegment<byte>> _sendQueue = new();
+    private struct QueuedMessage
+    {
+        public ArraySegment<byte> Data;
+        public WebSocketMessageType Type;
+        public bool EndOfMessage;
+    }
+
+    private readonly ConcurrentQueue<QueuedMessage> _sendQueue = new();
     private readonly byte[] _recvBuffer = new byte[64 * 1024];
     private volatile bool _connecting;
 
@@ -92,7 +99,33 @@ public class WebSocketClient : MonoBehaviour
         }
 
         var bytes = Encoding.UTF8.GetBytes(text);
-        _sendQueue.Enqueue(new ArraySegment<byte>(bytes));
+        EnqueueChunks(bytes, WebSocketMessageType.Text);
+    }
+
+    public void SendBinary(byte[] data)
+    {
+        if (data == null || data.Length == 0) return;
+        if (_webSocket == null || _webSocket.State != WebSocketState.Open)
+        {
+            Debug.LogWarning("[WS] Not connected; binary message skipped.");
+            return;
+        }
+
+        EnqueueChunks(data, WebSocketMessageType.Binary);
+    }
+
+    private void EnqueueChunks(byte[] bytes, WebSocketMessageType type)
+    {
+        const int chunkSize = 32 * 1024; // 32KB chunks
+        int offset = 0;
+        while (offset < bytes.Length)
+        {
+            int size = Math.Min(chunkSize, bytes.Length - offset);
+            var seg = new ArraySegment<byte>(bytes, offset, size);
+            bool isLast = (offset + size) >= bytes.Length;
+            _sendQueue.Enqueue(new QueuedMessage { Data = seg, Type = type, EndOfMessage = isLast });
+            offset += size;
+        }
     }
 
     public async Task CloseAsync()
@@ -153,7 +186,7 @@ public class WebSocketClient : MonoBehaviour
             {
                 while (_sendQueue.TryDequeue(out var msg))
                 {
-                    await _webSocket.SendAsync(msg, WebSocketMessageType.Text, true, token);
+                    await _webSocket.SendAsync(msg.Data, msg.Type, msg.EndOfMessage, token);
                 }
 
                 await Task.Delay(5, token);

@@ -5,7 +5,7 @@ using Oculus.Voice;
 using Meta.WitAi.TTS.Utilities;
 using Meta.WitAi.TTS.Data;
 
-public class SpeechToTextProvider : MonoBehaviour, ITextProvider
+public class SpeechToTextProvider : MonoBehaviour
 {
     [Header("Wit Configuration")]
     [SerializeField] private AppVoiceExperience appVoiceExperience;
